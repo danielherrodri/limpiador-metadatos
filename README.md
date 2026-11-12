@@ -46,6 +46,7 @@ Además:
 - **Renombra el archivo.** Nombres como `IMG_20261027_091405` también revelan la fecha.
 - **Varias fotos a la vez:** elige, arrastra o pega desde el portapapeles.
 - **Modo claro y oscuro**, y diseño adaptado a móvil.
+- **Instalable como app** en Android, iPhone y computadora, y funciona sin conexión.
 
 <div align="center">
 <img src="docs/captura-movil.png" alt="La herramienta en un teléfono" width="260">
@@ -66,15 +67,24 @@ Además:
 - **Marcas de agua invisibles en los píxeles**, como SynthID de Google: no son metadatos, son parte de la imagen.
 - **Lo que se ve en la foto:** placas, letreros, fachadas, reflejos o pantallas. Revísalo antes de publicar.
 
+## 📲 Instálala como app
+
+La demo es una app web instalable: se agrega a la pantalla de inicio con su propio ícono, abre en su ventana y funciona sin conexión.
+
+- **Android (Chrome, Edge, Samsung Internet):** abre la demo y toca **Instalar** en el aviso, o en el menú ⋮ elige «Instalar app».
+- **iPhone o iPad (Safari):** toca **Compartir** y luego **«Agregar a inicio»**.
+- **Computadora (Chrome o Edge):** usa el ícono de instalar que aparece en la barra de direcciones.
+
 ## 🔒 Privacidad
 
 - Las imágenes se procesan en memoria, en tu navegador. No hay servidor, ni analítica, ni cookies.
 - Lo único que se guarda (en `localStorage`) son tus opciones y el tema claro u oscuro.
+- El service worker (`sw.js`) solo guarda la página, sus íconos y sus fuentes para abrir sin conexión; nunca ve ni guarda tus fotos.
 - La página solo carga fuentes de Google Fonts; puedes quitarlas y usará las fuentes del sistema.
 
 ## 🚀 Úsala en tu equipo
 
-Es un solo archivo HTML, sin dependencias ni compilación.
+Es una página estática sin dependencias ni compilación: `index.html` con la herramienta, más `manifest.webmanifest`, `sw.js` e `iconos/` para que sea instalable.
 
 ```bash
 git clone https://github.com/danielherrodri/limpiador-metadatos.git
@@ -83,7 +93,7 @@ python3 -m http.server 8000
 # abre http://localhost:8000
 ```
 
-También puedes abrir `index.html` directamente o publicarlo en cualquier hosting estático (GitHub Pages, Cloudflare Pages, Netlify…).
+También puedes abrir `index.html` directamente (sin instalación ni modo sin conexión, que requieren `http://localhost` o HTTPS) o publicar la carpeta en cualquier hosting estático (GitHub Pages, Cloudflare Pages, Netlify…).
 
 ## 🧩 Intégrala en tu proyecto
 
