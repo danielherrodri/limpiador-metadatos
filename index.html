@@ -7,6 +7,13 @@
 <meta name="description" content="Quita la ubicación GPS, el modelo del teléfono, las fechas y las marcas de IA de tus fotos antes de compartirlas. Todo ocurre en tu navegador.">
 <meta name="theme-color" content="#f6f1e7">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f5a2b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="192x192" href="iconos/icono-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Limpiador">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}*,*::before,*::after{box-sizing:inherit}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -143,6 +150,14 @@ h2{font-family:var(--font-display);font-size:24px;line-height:1.1;font-weight:60
 .theme button[aria-pressed="true"]{background:var(--papel);color:var(--tinta);box-shadow:inset 0 0 0 1px var(--linea)}
 .theme button:focus-visible{outline:2px solid var(--olivo);outline-offset:2px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom, 0px));background:var(--tinta);color:var(--papel);padding:12px 20px;border-radius:var(--radius-pill);font-size:14px;font-weight:600;max-width:calc(100vw - 32px);text-align:center;z-index:20}
+/* Aviso para instalar la app (Android y escritorio con botón; iPhone con instrucciones) */
+.install{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--papel-alt);border:1px solid var(--linea);border-radius:var(--radius-md);padding:14px 16px;margin-top:20px}
+.install img{width:48px;height:48px;border-radius:12px;flex:none}
+.install-text{flex:1 1 220px;min-width:0;line-height:1.4}
+.install-text strong{display:block;font-size:16px}
+.install-text span{color:var(--tinta-suave);font-size:14px}
+.install-actions{display:flex;gap:8px;flex-wrap:wrap}
+.install .btn{min-height:40px;padding:0 16px;font-size:14px}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 
@@ -164,6 +179,18 @@ h2{font-family:var(--font-display);font-size:24px;line-height:1.1;font-weight:60
   <header>
     <h1>Limpiador de metadatos</h1>
     <p class="lede">Quita de tus imágenes la ubicación GPS, el modelo del teléfono, las fechas, las marcas de IA y otros datos ocultos antes de compartirlas. La limpieza ocurre en tu dispositivo: esta página no envía tus imágenes a ningún servidor. Solo recuerda tus opciones en este navegador.</p>
+    <div class="install" id="install" hidden>
+      <img src="iconos/icono-192.png" alt="" width="48" height="48">
+      <div class="install-text">
+        <strong>Tenla a la mano como app</strong>
+        <span id="installText">Instálala en tu teléfono o computadora: abre desde tu pantalla de inicio y funciona sin conexión.</span>
+        <span id="installIos" hidden>En iPhone o iPad: toca Compartir y luego «Agregar a inicio». Abre como app y funciona sin conexión.</span>
+      </div>
+      <div class="install-actions">
+        <button class="btn btn-primary" id="installGo" type="button" hidden>Instalar</button>
+        <button class="btn btn-ghost" id="installClose" type="button">Ahora no</button>
+      </div>
+    </div>
   </header>
 
   <section class="drop" id="drop" aria-label="Agregar imágenes">
@@ -849,6 +876,35 @@ const anchorDownloads={ async save({filename, data}){
   dlChecked=true; render();
 })();
 render();
+
+/* App instalable: service worker para abrir sin conexión y aviso para instalar */
+const enVisorClaude=!!(window.claude && typeof window.claude.use==='function');
+const esApp=()=>matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !enVisorClaude){
+  addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+const INSTALL_KEY='limpiador-metadatos:instalar-oculto';
+let installPrompt=null;
+function avisoOculto(){ try{ return localStorage.getItem(INSTALL_KEY)==='1'; }catch(_){ return false; } }
+function mostrarAviso(modo){
+  if(esApp() || avisoOculto() || enVisorClaude) return;
+  $('#installText').hidden= modo!=='boton';
+  $('#installIos').hidden= modo!=='ios';
+  $('#installGo').hidden= modo!=='boton';
+  $('#install').hidden=false;
+}
+addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); installPrompt=e; mostrarAviso('boton'); });
+$('#installGo').addEventListener('click', async ()=>{
+  if(!installPrompt) return;
+  installPrompt.prompt();
+  const {outcome}=await installPrompt.userChoice; installPrompt=null;
+  $('#install').hidden=true;
+  if(outcome==='accepted') toast('Listo: la encontrarás en tu pantalla de inicio');
+});
+$('#installClose').addEventListener('click', ()=>{ $('#install').hidden=true; try{ localStorage.setItem(INSTALL_KEY,'1'); }catch(_){} });
+addEventListener('appinstalled', ()=>{ $('#install').hidden=true; });
+const esIos=/iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+if(esIos && !('onbeforeinstallprompt' in window)) mostrarAviso('ios');
 </script>
 
 </body>
